@@ -17,6 +17,8 @@
 
 ![Actual Impossible Print studio showing the reconstructed image, measured corner controls and warped floor and wall textures](docs/assets/workspace.png)
 
+[Open the app](https://impossible-print.vercel.app/)
+
 ## An ordinary corner, seen differently
 
 A flat image looks simple until you split it across two perpendicular surfaces. Impossible Print computes the distortion for a measured viewing point, previews the result on a real 3D corner, and prepares numbered print sheets you can assemble yourself.
