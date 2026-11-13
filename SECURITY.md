@@ -8,7 +8,7 @@ Only the current `main` source is maintained at this stage. There is no promised
 
 ## Report privately
 
-If repository private vulnerability reporting is enabled, use [Report a vulnerability](https://github.com/ufodia/impossible-print/security/advisories/new). Do not publish exploit details or private artwork in an issue.
+Use [Report a vulnerability](https://github.com/ufodia/impossible-print/security/advisories/new). Private vulnerability reporting is enabled for this repository. Do not publish exploit details or private artwork in an issue.
 
 If that private channel is unavailable, ask the maintainer for a private route without posting sensitive details. Include the affected commit, impact, reproduction steps and a minimal synthetic project through the private channel.
 
