@@ -201,7 +201,7 @@ async function rebuild(): Promise<void> {
   } catch (error) {
     if (epoch === rebuildEpoch)
       tell(
-        error instanceof Error ? error.message : 'The projection could not be created.',
+        error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'The projection could not be created.',
         'error',
       );
   } finally {
@@ -258,7 +258,7 @@ function render(): void {
   const previewGeneration = ++previewEpoch;
   preview?.dispose();
   preview = null;
-  root!.innerHTML = `<header class="site-header"><a class="brand" href="./" aria-label="Impossible Print home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>impossible<span>print</span><sup>↗</sup></span></a><span class="header-caption">A DIFFERENT POINT OF VIEW.</span><nav class="header-actions" aria-label="Project actions"><button class="button quiet" data-action="sample" ${building ? 'disabled' : ''}>Load sample</button><button class="button quiet" data-action="open" ${building ? 'disabled' : ''}>${icon('upload')} Open project</button><button class="button outline" data-action="save" ${building ? 'disabled' : ''}>${icon('save')} Save project</button><a class="support-button" href="https://buymeacoffee.com/ufodia" target="_blank" rel="noopener noreferrer" aria-label="Support ufodia on Buy Me a Coffee">${icon('coffee')}<span>Keep the studio open</span></a></nav></header>
+  root!.innerHTML = `<header class="site-header"><a class="brand" href="./" aria-label="impossibleprint home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>impossible<span>print</span><sup aria-hidden="true">↗</sup></span></a><span class="header-caption">A DIFFERENT POINT OF VIEW.</span><nav class="header-actions" aria-label="Project actions"><button class="button quiet" data-action="sample" ${building ? 'disabled' : ''}>Load sample</button><button class="button quiet" data-action="open" ${building ? 'disabled' : ''}>${icon('upload')} Open project</button><button class="button outline" data-action="save" ${building ? 'disabled' : ''}>${icon('save')} Save project</button><a class="support-button" href="https://buymeacoffee.com/ufodia" target="_blank" rel="noopener noreferrer" aria-label="Keep the studio open — Support ufodia on Buy Me a Coffee">${icon('coffee')}<span>Keep the studio open</span></a></nav></header>
   <main><section class="intro"><div><p class="eyebrow"><span class="teal-dot"></span> THE CORNER ILLUSION STUDIO</p><h1>One corner. <span>An impossible view.</span></h1><p>Split an image across a wall and a table. Bring it back together from one measured point.</p></div><div class="physical-badge">${icon('measure')}<span>Real dimensions.<br><strong>Paper, not a projector.</strong></span></div></section>
   <div class="status-note ${messageKind}" role="status" aria-live="polite"><i></i><span>${h(message)}</span>${building ? '<span class="building-indicator"><i class="spinner"></i> PREPARING SURFACES</span>' : '<span class="local-label">LOCAL IMAGES · NO UPLOADS</span>'}</div>
   <div class="studio-layout"><aside class="settings-sidebar"><section class="source-panel panel"><div class="panel-heading"><h2><span>01</span> The image</h2><span class="micro-tag">${project.source.width} × ${project.source.height}</span></div><label class="field-label" for="project-name">PROJECT NAME</label><input id="project-name" aria-label="Project name" data-field="name" value="${h(project.name)}" maxlength="120"><div class="source-preview"><img data-testid="source-image" src="${h(project.source.dataUrl)}" width="${project.source.width}" height="${project.source.height}" alt="Source artwork before projection"></div><button class="upload-button" data-action="upload" ${building ? 'disabled' : ''}>${icon('upload')} Upload image <span>PNG · JPEG · WEBP</span></button><p class="field-hint">Up to 8 MiB, 4,096 pixels per side and 12 megapixels. Raster images only.</p><div class="text-maker"><label class="field-label" for="artwork-text">OR MAKE SOMETHING WITH WORDS</label><div><input id="artwork-text" aria-label="Artwork text" value="${h(textValue)}" maxlength="60"><button class="button outline small" data-action="text" ${building ? 'disabled' : ''}>Create text</button></div></div></section>
@@ -417,7 +417,7 @@ function bindEvents(): void {
         }
       } catch (error) {
         tell(
-          error instanceof Error ? error.message : 'That action could not be completed.',
+          error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'That action could not be completed.',
           'error',
         );
         render();
@@ -446,7 +446,7 @@ function bindEvents(): void {
         render();
       } else void rebuild();
     } catch (error) {
-      tell(error instanceof Error ? error.message : 'Check that measurement.', 'error');
+      tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Check that measurement.', 'error');
       render();
     }
   };
@@ -454,7 +454,7 @@ function bindEvents(): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file)
       void importImage(file).catch((error) => {
-        tell(error instanceof Error ? error.message : 'Could not open that image.', 'error');
+        tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Could not open that image.', 'error');
         render();
       });
   });
@@ -481,7 +481,7 @@ function bindEvents(): void {
         await rebuild();
       })
       .catch((error) => {
-        tell(error instanceof Error ? error.message : 'Could not open the project.', 'error');
+        tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Could not open the project.', 'error');
         render();
       });
   });

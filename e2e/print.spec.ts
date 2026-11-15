@@ -65,8 +65,9 @@ test('assembly sheets contain actual warped pixels, measured tiles, escaped name
 
 test('without WebGL the explicit fallback retains real surface PNG and print output', async ({
   browser,
+  baseURL,
 }) => {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ baseURL });
   try {
     await context.addInitScript(() => {
       const original = HTMLCanvasElement.prototype.getContext;
@@ -76,7 +77,7 @@ test('without WebGL the explicit fallback retains real surface PNG and print out
       } as typeof original;
     });
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4173/');
+    await page.goto('/');
     await expect(
       page.getByText('3D preview is unavailable in this browser.', { exact: true }),
     ).toBeVisible();

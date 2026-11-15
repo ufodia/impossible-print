@@ -91,7 +91,7 @@ test('configured 3D camera, orbit overview, and returning camera view render dis
   await page.getByRole('button', { name: 'Camera view', exact: true }).click();
   const restored = await canvas.screenshot();
   expect(await pixelDifference(page, configured, restored)).toBeLessThan(0.02);
-  await page.screenshot({ path: 'docs/assets/workspace.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/workspace.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
     true,

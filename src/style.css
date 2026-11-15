@@ -70,7 +70,7 @@ a:focus-visible {
 }
 .brand > span:last-child > span {
   font-weight: 350;
-  color: #6a9392;
+  color: #4d6e6d;
 }
 .brand sup {
   font: 11px var(--mono);
@@ -99,7 +99,7 @@ a:focus-visible {
 .header-caption {
   font: 10px var(--mono);
   letter-spacing: 1px;
-  color: #8da8a0;
+  color: #5d6f6a;
   border-left: 1px solid var(--line);
   padding-left: 22px;
 }
@@ -128,7 +128,7 @@ a:focus-visible {
     border-color 0.15s;
 }
 .button.quiet {
-  color: #6d9791;
+  color: #52716d;
 }
 .button.quiet:hover:not(:disabled) {
   background: #e4ede5;
@@ -137,15 +137,15 @@ a:focus-visible {
 .button.outline {
   background: #fbfdf680;
   border-color: #c2d5cc;
-  color: #568480;
+  color: #4d7773;
 }
 .button.outline:hover:not(:disabled) {
   background: #fcfff8;
   border-color: #86b0a4;
 }
 .button.primary {
-  background: #3b8084;
-  border-color: #3b8084;
+  background: #39797d;
+  border-color: #39797d;
   color: #f8fff7;
   box-shadow: 0 2px 0 #285d64;
 }
@@ -166,7 +166,7 @@ a:focus-visible {
   border-radius: 6px;
   background: #e2ece2;
   border: 1px solid #c7dccb;
-  color: #688c72;
+  color: #516d59;
   text-decoration: none;
   font-size: 12px;
   margin-left: 6px;
@@ -214,7 +214,7 @@ main {
   margin: 0;
 }
 .intro h1 > span {
-  color: #81a3a0;
+  color: #59706e;
   font-weight: 350;
 }
 .intro > div > p:last-child {
@@ -229,7 +229,7 @@ main {
   gap: 11px;
   border-left: 1px solid #ccded1;
   padding-left: 22px;
-  color: #88a69b;
+  color: #5c7169;
 }
 .physical-badge > .icon {
   width: 27px;
@@ -242,7 +242,7 @@ main {
 }
 .physical-badge strong {
   font-weight: 400;
-  color: #6c9489;
+  color: #54736b;
 }
 .status-note {
   display: flex;
@@ -272,7 +272,7 @@ main {
 }
 .local-label {
   margin-left: auto;
-  color: #94ad9c;
+  color: #607065;
   font: 9px var(--mono);
   letter-spacing: 0.8px;
   white-space: nowrap;
@@ -395,7 +395,7 @@ input:not([type='checkbox']):focus {
   border: 1px dashed #bad2be;
   background: #eff5e9;
   border-radius: 5px;
-  color: #769c7c;
+  color: #57735c;
   font-size: 12px;
   margin-top: 12px;
 }
@@ -463,7 +463,7 @@ input:not([type='checkbox']):focus {
 .output-settings label > span {
   float: right;
   font: 10px var(--mono);
-  color: #a1b99f;
+  color: #677666;
 }
 .measurement-fields input,
 .output-settings input:not([type='checkbox']) {
@@ -562,7 +562,7 @@ input:not([type='checkbox']):focus {
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
-  color: #7f9e8c;
+  color: #5b7265;
   font-size: 12px;
   padding: 7px 10px;
   min-height: 34px;
@@ -574,7 +574,7 @@ input:not([type='checkbox']):focus {
 .view-button.active {
   background: #dbeae0;
   border-color: #b9d3c6;
-  color: #4d8279;
+  color: #416d66;
 }
 .view-button:hover:not(.active):not(:disabled) {
   background: #e4eee2;
@@ -694,7 +694,7 @@ input:not([type='checkbox']):focus {
 }
 .view-caption > span:last-child {
   font: 8px var(--mono);
-  color: #9bb8a2;
+  color: #5f7063;
   letter-spacing: 0.4px;
   white-space: nowrap;
 }
@@ -772,7 +772,7 @@ input:not([type='checkbox']):focus {
 .surface-title > strong {
   font-size: 13px;
   font-weight: 500;
-  color: #608b7c;
+  color: #547a6d;
 }
 .surface-title > span {
   font: 10px var(--mono);
@@ -818,7 +818,7 @@ input:not([type='checkbox']):focus {
   background: none;
   padding: 3px 0;
   font-size: 11px;
-  color: #789e87;
+  color: #5b7867;
   text-decoration: underline;
   text-underline-offset: 3px;
   white-space: nowrap;
@@ -851,7 +851,7 @@ input:not([type='checkbox']):focus {
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #6d9578;
+  color: #55745e;
 }
 .print-bar small {
   display: block;
@@ -911,7 +911,7 @@ input:not([type='checkbox']):focus {
   gap: 18px;
 }
 .site-footer a {
-  color: #6c9485;
+  color: #547368;
   text-decoration: none;
 }
 .site-footer a:hover {
@@ -945,7 +945,7 @@ input:not([type='checkbox']):focus {
 .site-footer,
 .site-footer > span:last-child {
   font-size: 12px;
-  color: #6d8b78;
+  color: #597262;
 }
 .field-label,
 .micro-tag,
@@ -955,17 +955,17 @@ input:not([type='checkbox']):focus {
 .projection-summary span,
 .surface-title > span,
 .surface-foot > span {
-  color: #779783;
+  color: #597162;
 }
 .upload-button > span {
-  color: #83a584;
+  color: #5a725b;
 }
 .projection-summary span {
   font-size: 10px;
   letter-spacing: 0;
 }
 .view-toolbar > span {
-  color: #7f9f8a;
+  color: #5b7263;
   font-size: 11px;
 }
 .surface-title > span,
@@ -986,22 +986,22 @@ input:not([type='checkbox']):focus {
   min-width: 0;
 }
 .physical-note > span {
-  color: #789780;
+  color: #5a7160;
 }
 .print-bar small {
-  color: #7d9d83;
+  color: #5a715e;
 }
 .projection-summary small {
-  color: #7d9d83;
+  color: #5a715e;
 }
 .intro > div > p:last-child {
-  color: #78988a;
+  color: #5a7268;
 }
 .status-note.error {
   color: #ad7156;
 }
 .status-note.success {
-  color: #62876e;
+  color: #54745f;
 }
 .preview-empty strong {
   color: #6f9787;
