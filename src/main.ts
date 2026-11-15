@@ -13,6 +13,12 @@ import type { CornerPreview, PreviewView } from './preview';
 type RasterResult = ReturnType<typeof rasterizeSurfaces>;
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Impossible Print application root is missing.');
+const liveStatus = document.createElement('p');
+liveStatus.className = 'studio-announcements';
+liveStatus.setAttribute('role', 'status');
+liveStatus.setAttribute('aria-live', 'polite');
+liveStatus.setAttribute('aria-atomic', 'true');
+root!.insertAdjacentElement('afterend', liveStatus);
 let project: Project = sampleProject(makeArtwork('THE OTHER SIDE', true));
 let raster: RasterResult | null = null;
 let sourcePixels: ImageData | null = null;
@@ -60,6 +66,7 @@ function icon(name: string): string {
 function tell(text: string, kind: typeof messageKind = 'info'): void {
   message = text;
   messageKind = kind;
+  liveStatus.textContent = text;
 }
 function number(value: number): string {
   return value.toLocaleString('en-US', { maximumFractionDigits: 1 });
@@ -201,7 +208,11 @@ async function rebuild(): Promise<void> {
   } catch (error) {
     if (epoch === rebuildEpoch)
       tell(
-        error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'The projection could not be created.',
+        error instanceof SyntaxError
+          ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.'
+          : error instanceof Error
+            ? error.message
+            : 'The projection could not be created.',
         'error',
       );
   } finally {
@@ -254,20 +265,114 @@ function showViewState(): void {
     caption.innerHTML = `<i></i>${viewMode === 'camera' ? 'The measured point reconstructs your image.' : 'The overview reveals the split across both surfaces.'}`;
 }
 
+// Keep the keyboard user's place when the studio replaces its controls.
+const focusAttributes = [
+  'data-action',
+  'data-id',
+  'data-index',
+  'data-field',
+  'data-project-field',
+  'data-stage-field',
+  'data-rule-field',
+  'data-rule-card',
+  'data-card-field',
+  'data-card-id',
+];
+type FocusTarget = { selector: string; index: number };
+function focusTarget(element: Element | null): FocusTarget | null {
+  if (!element || !root!.contains(element)) return null;
+  const attributes = focusAttributes.filter((name) => element.hasAttribute(name));
+  const selector = element.id
+    ? `#${CSS.escape(element.id)}`
+    : element.matches('a[href]')
+      ? `a[href="${CSS.escape(element.getAttribute('href')!)}"]`
+      : attributes.length
+        ? element.tagName.toLowerCase() +
+          attributes
+            .map((name) => `[${name}="${CSS.escape(element.getAttribute(name)!)}"]`)
+            .join('')
+        : element.tagName.toLowerCase();
+  return { selector, index: Array.from(root!.querySelectorAll(selector)).indexOf(element) };
+}
+// A Tab with no destination leaves this scope; it must not restore the old field.
+let tabIntent: { destination: FocusTarget | null } | null = null;
+let deferredFocus: FocusTarget | null = null;
+root!.addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab') return;
+  const scope = (event.target as Element).closest('dialog[open]') ?? root!;
+  const controls = Array.from(
+    scope.querySelectorAll<HTMLElement>(
+      'a[href],button:not(:disabled),input:not(:disabled):not([type="hidden"]),select:not(:disabled),textarea:not(:disabled),summary,[tabindex="0"]',
+    ),
+  ).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+  const index = controls.indexOf(document.activeElement as HTMLElement);
+  tabIntent = { destination: focusTarget(controls[index + (event.shiftKey ? -1 : 1)] ?? null) };
+  setTimeout(() => {
+    tabIntent = null;
+  }, 0);
+});
+function retainFocus(): () => void {
+  const active = document.activeElement;
+  const tabbing = tabIntent !== null;
+  const target = tabbing
+    ? tabIntent!.destination
+    : (focusTarget(active) ?? (active === document.body ? deferredFocus : null));
+  const start =
+    active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
+      ? active.selectionStart
+      : null;
+  const end =
+    active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
+      ? active.selectionEnd
+      : null;
+  return () => {
+    if (tabbing && !target) {
+      deferredFocus = null;
+      return;
+    }
+    const restore = () => {
+      const replacement = target
+        ? root!.querySelectorAll<HTMLElement>(target.selector)[target.index]
+        : null;
+      if (
+        !replacement ||
+        replacement.matches(':disabled') ||
+        !replacement.getClientRects().length
+      ) {
+        deferredFocus = target;
+        return;
+      }
+      deferredFocus = null;
+      replacement.focus({ preventScroll: true });
+      if (
+        !tabbing &&
+        start !== null &&
+        end !== null &&
+        (replacement instanceof HTMLInputElement || replacement instanceof HTMLTextAreaElement)
+      )
+        replacement.setSelectionRange(start, end);
+    };
+    if (tabbing) setTimeout(restore, 0);
+    else restore();
+  };
+}
+
 function render(): void {
+  const restoreFocus = retainFocus();
   const previewGeneration = ++previewEpoch;
   preview?.dispose();
   preview = null;
   root!.innerHTML = `<header class="site-header"><a class="brand" href="./" aria-label="impossibleprint home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>impossible<span>print</span><sup aria-hidden="true">↗</sup></span></a><span class="header-caption">A DIFFERENT POINT OF VIEW.</span><nav class="header-actions" aria-label="Project actions"><button class="button quiet" data-action="sample" ${building ? 'disabled' : ''}>Load sample</button><button class="button quiet" data-action="open" ${building ? 'disabled' : ''}>${icon('upload')} Open project</button><button class="button outline" data-action="save" ${building ? 'disabled' : ''}>${icon('save')} Save project</button><a class="support-button" href="https://buymeacoffee.com/ufodia" target="_blank" rel="noopener noreferrer" aria-label="Keep the studio open — Support ufodia on Buy Me a Coffee">${icon('coffee')}<span>Keep the studio open</span></a></nav></header>
   <main><section class="intro"><div><p class="eyebrow"><span class="teal-dot"></span> THE CORNER ILLUSION STUDIO</p><h1>One corner. <span>An impossible view.</span></h1><p>Split an image across a wall and a table. Bring it back together from one measured point.</p></div><div class="physical-badge">${icon('measure')}<span>Real dimensions.<br><strong>Paper, not a projector.</strong></span></div></section>
-  <div class="status-note ${messageKind}" role="status" aria-live="polite"><i></i><span>${h(message)}</span>${building ? '<span class="building-indicator"><i class="spinner"></i> PREPARING SURFACES</span>' : '<span class="local-label">LOCAL IMAGES · NO UPLOADS</span>'}</div>
+  <div class="status-note ${messageKind}"><i></i><span>${h(message)}</span>${building ? '<span class="building-indicator"><i class="spinner"></i> PREPARING SURFACES</span>' : '<span class="local-label">LOCAL IMAGES · NO UPLOADS</span>'}</div>
   <div class="studio-layout"><aside class="settings-sidebar"><section class="source-panel panel"><div class="panel-heading"><h2><span>01</span> The image</h2><span class="micro-tag">${project.source.width} × ${project.source.height}</span></div><label class="field-label" for="project-name">PROJECT NAME</label><input id="project-name" aria-label="Project name" data-field="name" value="${h(project.name)}" maxlength="120"><div class="source-preview"><img data-testid="source-image" src="${h(project.source.dataUrl)}" width="${project.source.width}" height="${project.source.height}" alt="Source artwork before projection"></div><button class="upload-button" data-action="upload" ${building ? 'disabled' : ''}>${icon('upload')} Upload image <span>PNG · JPEG · WEBP</span></button><p class="field-hint">Up to 8 MiB, 4,096 pixels per side and 12 megapixels. Raster images only.</p><div class="text-maker"><label class="field-label" for="artwork-text">OR MAKE SOMETHING WITH WORDS</label><div><input id="artwork-text" aria-label="Artwork text" value="${h(textValue)}" maxlength="60"><button class="button outline small" data-action="text" ${building ? 'disabled' : ''}>Create text</button></div></div></section>
-  <section class="geometry-panel panel"><div class="panel-heading"><h2><span>02</span> The corner</h2><span class="micro-tag">90° / TWO PLANES</span></div><div class="surface-drawing" aria-hidden="true"><svg viewBox="0 0 250 116" fill="none"><path d="m37 64 90 34 89-37-89-29-90 32Z" fill="#dbe6df" stroke="#92b2a8"/><path d="m37 64 90-32V5L37 32v32Z" fill="#f1eee4" stroke="#9ab4aa"/><path d="m37 64 90-32" stroke="#4a9293" stroke-width="2"/><text x="57" y="91" font-size="9" fill="#77998c" font-family="monospace">FLOOR</text><text x="75" y="34" font-size="9" fill="#77998c" font-family="monospace">WALL</text></svg></div><div class="measurement-fields">${numericField('Surface width', 'surfaceWidth', project.surfaceWidth, 100, 1800)}${numericField('Floor depth', 'floorDepth', project.floorDepth, 100, 1500)}${numericField('Wall height', 'wallHeight', project.wallHeight, 100, 1500)}</div><p class="field-hint">Measure the real corner in millimeters. Wall and floor meet at the seam.</p></section>
+  <section class="geometry-panel panel"><div class="panel-heading"><h2><span>02</span> The corner</h2><span class="micro-tag">90° / TWO PLANES</span></div><div class="surface-drawing" aria-hidden="true"><svg viewBox="0 0 250 116" fill="none"><path d="m37 64 90 34 89-37-89-29-90 32Z" fill="#dbe6df" stroke="#92b2a8"/><path d="m37 64 90-32V5L37 32v32Z" fill="#f1eee4" stroke="#9ab4aa"/><path d="m37 64 90-32" stroke="#4a9293" stroke-width="2"/><text x="57" y="91" font-size="9" fill="#47695e" font-family="monospace">FLOOR</text><text x="75" y="34" font-size="9" fill="#47695e" font-family="monospace">WALL</text></svg></div><div class="measurement-fields">${numericField('Surface width', 'surfaceWidth', project.surfaceWidth, 100, 1800)}${numericField('Floor depth', 'floorDepth', project.floorDepth, 100, 1500)}${numericField('Wall height', 'wallHeight', project.wallHeight, 100, 1500)}</div><p class="field-hint">Measure the real corner in millimeters. Wall and floor meet at the seam.</p></section>
   <section class="camera-panel panel"><div class="panel-heading"><h2><span>03</span> The viewpoint</h2>${icon('camera')}</div><div class="measurement-fields">${numericField('Lateral offset (+ left)', 'cameraX', project.cameraX, -2000, 2000)}${numericField('Distance from wall', 'cameraDistance', project.cameraDistance, 100, 5000)}${numericField('Height above floor', 'cameraHeight', project.cameraHeight, 100, 5000)}</div><p class="field-hint">The camera looks toward the center of the seam. Positive offset moves the viewing point left when you face the wall.</p><div class="output-settings">${numericField('Artwork width', 'designWidth', project.designWidth, 50, 1600)}<label>Requested print resolution<span>DPI</span><input aria-label="Requested print resolution in DPI" data-field="dpi" type="number" min="40" max="150" step="1" value="${project.dpi}"></label><label class="auto-fit"><input aria-label="Auto-fit artwork to surfaces" data-field="autoFit" type="checkbox" ${project.autoFit ? 'checked' : ''}> Auto-fit artwork to the surfaces</label><p class="field-hint">Auto-fit can shrink the projected design. The raster budget can reduce effective DPI.</p></div><button class="button primary update-button" data-action="rebuild" ${building ? 'disabled' : ''}>${building ? '<i class="spinner"></i> Preparing…' : `Update projection ${icon('arrow')}`}</button></section></aside>
-  <section class="preview-workspace"><section class="spatial-panel panel"><div class="spatial-heading"><div><p class="eyebrow">04 / SEE BOTH SIDES</p><h2>The image meets the corner.</h2></div><span class="preview-label">TRUE 3D PREVIEW</span></div><div class="view-toolbar" role="group" aria-label="Preview viewpoint"><button class="view-button ${viewMode === 'camera' ? 'active' : ''}" data-action="view" data-view="camera" aria-pressed="${viewMode === 'camera'}" ${!raster ? 'disabled' : ''}>${icon('camera')} Camera view</button><button class="view-button ${viewMode === 'overview' ? 'active' : ''}" data-action="view" data-view="overview" aria-pressed="${viewMode === 'overview'}" ${!raster ? 'disabled' : ''}>${icon('orbit')} Orbit overview</button><span>Drag to orbit · scroll to zoom</span></div><div class="corner-preview" data-testid="corner-preview" id="corner-preview"><span class="preview-corner top-left"></span><span class="preview-corner top-right"></span><span class="preview-corner bottom-left"></span><span class="preview-corner bottom-right"></span>${!raster ? `<div class="preview-empty">${icon('image')}<strong>${building ? 'Preparing the two surfaces…' : 'Your corner is ready for an image.'}</strong><p>${building ? 'The same raster textures will power this preview and the print sheets.' : 'Update the projection to inspect the result.'}</p></div>` : ''}</div><div class="view-caption"><span><i></i>${viewMode === 'camera' ? 'The measured point reconstructs your image.' : 'The overview reveals the split across both surfaces.'}</span><span>WALL y=0 / FLOOR z=0</span></div><div class="projection-summary" data-testid="projection-summary"><div><span>EFFECTIVE RASTER DPI</span><strong>${raster ? number(raster.effectiveDpi) : '—'}</strong><small>Requested ${project.dpi} DPI</small></div><div><span>ARTWORK FIT SCALE</span><strong>${raster ? number(raster.projection.fitScale * 100) : '—'}<i>${raster ? '%' : ''}</i></strong><small>Relative to requested width</small></div><div><span>CLIPPED SOURCE ESTIMATE</span><strong>${raster ? number(raster.clippedFraction * 100) : '—'}<i>${raster ? '%' : ''}</i></strong><small>Review the surface previews</small></div></div></section>
+  <section class="preview-workspace"><section class="spatial-panel panel"><div class="spatial-heading"><div><p class="eyebrow">04 / SEE BOTH SIDES</p><h2>The image meets the corner.</h2></div><span class="preview-label">TRUE 3D PREVIEW</span></div><div class="view-toolbar" role="group" aria-label="Preview viewpoint"><button class="view-button ${viewMode === 'camera' ? 'active' : ''}" data-action="view" data-view="camera" aria-pressed="${viewMode === 'camera'}" ${!raster ? 'disabled' : ''}>${icon('camera')} Camera view</button><button class="view-button ${viewMode === 'overview' ? 'active' : ''}" data-action="view" data-view="overview" aria-pressed="${viewMode === 'overview'}" ${!raster ? 'disabled' : ''}>${icon('orbit')} Orbit overview</button><span>Drag or arrow keys to orbit · scroll or +/− to zoom</span></div><div class="corner-preview" data-testid="corner-preview" id="corner-preview"><span class="preview-corner top-left"></span><span class="preview-corner top-right"></span><span class="preview-corner bottom-left"></span><span class="preview-corner bottom-right"></span>${!raster ? `<div class="preview-empty">${icon('image')}<strong>${building ? 'Preparing the two surfaces…' : 'Your corner is ready for an image.'}</strong><p>${building ? 'The same raster textures will power this preview and the print sheets.' : 'Update the projection to inspect the result.'}</p></div>` : ''}</div><div class="view-caption"><span><i></i>${viewMode === 'camera' ? 'The measured point reconstructs your image.' : 'The overview reveals the split across both surfaces.'}</span><span>WALL y=0 / FLOOR z=0</span></div><div class="projection-summary" data-testid="projection-summary"><div><span>EFFECTIVE RASTER DPI</span><strong>${raster ? number(raster.effectiveDpi) : '—'}</strong><small>Requested ${project.dpi} DPI</small></div><div><span>ARTWORK FIT SCALE</span><strong>${raster ? number(raster.projection.fitScale * 100) : '—'}<i>${raster ? '%' : ''}</i></strong><small>Relative to requested width</small></div><div><span>CLIPPED SOURCE ESTIMATE</span><strong>${raster ? number(raster.clippedFraction * 100) : '—'}<i>${raster ? '%' : ''}</i></strong><small>Review the surface previews</small></div></div></section>
   <section class="surfaces-panel panel"><div class="panel-heading"><div><p class="eyebrow">05 / WHAT YOU WILL PRINT</p><h2>Two distorted pieces. One picture.</h2></div><span class="micro-tag">ACTUAL WARPED RASTERS</span></div><div class="surface-previews"><article><div class="surface-title"><strong>Floor</strong><span>${number(project.surfaceWidth)} × ${number(project.floorDepth)} mm</span></div><div class="surface-image-frame">${floorPng ? `<img data-testid="floor-preview" src="${floorPng}" width="${raster!.floor.width}" height="${raster!.floor.height}" alt="Warped floor artwork, with the seam at the top">` : '<span>FLOOR TEXTURE / WAITING</span>'}</div><div class="surface-foot"><span>↑ SEAM AT TOP</span><button class="text-button" data-action="floor" ${!raster || building ? 'disabled' : ''}>Download floor PNG ↗</button></div></article><article><div class="surface-title"><strong>Wall</strong><span>${number(project.surfaceWidth)} × ${number(project.wallHeight)} mm</span></div><div class="surface-image-frame">${wallPng ? `<img data-testid="wall-preview" src="${wallPng}" width="${raster!.wall.width}" height="${raster!.wall.height}" alt="Warped wall artwork, with the seam at the bottom">` : '<span>WALL TEXTURE / WAITING</span>'}</div><div class="surface-foot"><span>↓ SEAM AT BOTTOM</span><button class="text-button" data-action="wall" ${!raster || building ? 'disabled' : ''}>Download wall PNG ↗</button></div></article></div><div class="print-bar"><div>${icon('print')}<span><strong>Build the illusion at actual size.</strong><small>A4 tiles, surface measurements, placement guidance and a calibration ruler.</small></span></div><button class="button primary" data-action="print" ${!raster || building ? 'disabled' : ''}>Print A4 sheets ${icon('arrow')}</button></div></section><div class="physical-note"><span>BEFORE YOU CUT / A REAL-WORLD CHECK</span><p>Use a 90° corner, print at 100%, and verify the ruler. Match the measured camera position. Paper alignment, surface flatness and lens perspective affect the physical result.</p></div></section></div>
   <footer class="site-footer"><span><i></i> The trick is where you stand.</span><span>MIT © ufodia <a href="${import.meta.env.BASE_URL}licenses/three.txt" target="_blank" rel="noopener noreferrer">Three.js license ↗</a> <a href="https://github.com/ufodia/impossible-print" target="_blank" rel="noopener noreferrer">View source ↗</a></span></footer></main><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload artwork image" hidden><input id="project-file" type="file" accept="application/json,.json" aria-label="Import project" hidden>`;
   bindEvents();
+  restoreFocus();
   if (raster && floorCanvas && wallCanvas) {
     const container = document.getElementById('corner-preview')!;
     const currentProject = project,
@@ -417,7 +522,11 @@ function bindEvents(): void {
         }
       } catch (error) {
         tell(
-          error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'That action could not be completed.',
+          error instanceof SyntaxError
+            ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.'
+            : error instanceof Error
+              ? error.message
+              : 'That action could not be completed.',
           'error',
         );
         render();
@@ -446,7 +555,14 @@ function bindEvents(): void {
         render();
       } else void rebuild();
     } catch (error) {
-      tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Check that measurement.', 'error');
+      tell(
+        error instanceof SyntaxError
+          ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.'
+          : error instanceof Error
+            ? error.message
+            : 'Check that measurement.',
+        'error',
+      );
       render();
     }
   };
@@ -454,7 +570,14 @@ function bindEvents(): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file)
       void importImage(file).catch((error) => {
-        tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Could not open that image.', 'error');
+        tell(
+          error instanceof SyntaxError
+            ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.'
+            : error instanceof Error
+              ? error.message
+              : 'Could not open that image.',
+          'error',
+        );
         render();
       });
   });
@@ -481,7 +604,14 @@ function bindEvents(): void {
         await rebuild();
       })
       .catch((error) => {
-        tell(error instanceof SyntaxError ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.' : error instanceof Error ? error.message : 'Could not open the project.', 'error');
+        tell(
+          error instanceof SyntaxError
+            ? 'This is not valid Impossible Print project JSON. Choose a JSON file exported in the documented format.'
+            : error instanceof Error
+              ? error.message
+              : 'Could not open the project.',
+          'error',
+        );
         render();
       });
   });

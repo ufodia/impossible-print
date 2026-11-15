@@ -26,6 +26,23 @@ export class CornerPreview {
     }
   };
 
+  private readonly keyboardOrbit = (event: KeyboardEvent): void => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const action = event.key;
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-', '_'].includes(action))
+      return;
+    event.preventDefault();
+    this.manualOrbit();
+    if (action === 'ArrowLeft') this.controls.rotateLeft(0.08);
+    if (action === 'ArrowRight') this.controls.rotateLeft(-0.08);
+    if (action === 'ArrowUp') this.controls.rotateUp(0.08);
+    if (action === 'ArrowDown') this.controls.rotateUp(-0.08);
+    if (action === '+' || action === '=') this.controls.dollyIn(0.9);
+    if (action === '-' || action === '_') this.controls.dollyOut(0.9);
+    this.controls.update();
+    this.draw();
+  };
+
   constructor(
     private readonly container: HTMLElement,
     private readonly project: Project,
@@ -39,10 +56,11 @@ export class CornerPreview {
     this.renderer.setClearColor('#e6eeeb');
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.domElement.setAttribute('role', 'img');
+    this.renderer.domElement.setAttribute('role', 'group');
+    this.renderer.domElement.tabIndex = 0;
     this.renderer.domElement.setAttribute(
       'aria-label',
-      'Three-dimensional floor and wall projection preview. Use the view buttons or drag to orbit.',
+      'Three-dimensional floor and wall projection preview. Arrow keys orbit; plus and minus zoom. Camera view restores the measured viewpoint.',
     );
     this.renderer.domElement.style.width = '100%';
     this.renderer.domElement.style.height = '100%';
@@ -55,6 +73,7 @@ export class CornerPreview {
     this.controls.maxDistance = 18000;
     this.controls.addEventListener('change', this.draw);
     this.controls.addEventListener('start', this.manualOrbit);
+    this.renderer.domElement.addEventListener('keydown', this.keyboardOrbit);
 
     const { surfaceWidth: width, floorDepth: depth, wallHeight: height } = project;
     const backingMaterial = new THREE.MeshBasicMaterial({
@@ -200,6 +219,7 @@ export class CornerPreview {
     this.observer.disconnect();
     this.controls.removeEventListener('change', this.draw);
     this.controls.removeEventListener('start', this.manualOrbit);
+    this.renderer.domElement.removeEventListener('keydown', this.keyboardOrbit);
     this.controls.dispose();
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();

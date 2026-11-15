@@ -137,3 +137,59 @@ test('malformed projects and active image formats are rejected while current art
   await expect(page.getByRole('status')).toContainText('SVG');
   await expect(page.getByRole('button', { name: 'Print A4 sheets', exact: true })).toBeEnabled();
 });
+
+test('keyboard edits keep the next control and the status region survives studio renders', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /Update projection/ })).toBeEnabled();
+  const status = await page.getByRole('status').elementHandle();
+  await page.locator('#project-name').focus();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('Keyboard project');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: /^Upload image/ })).toBeFocused();
+  expect(await status!.evaluate((element) => element.isConnected)).toBe(true);
+  await expect(page.getByRole('status')).toContainText('Project renamed');
+  await page.setViewportSize({ width: 320, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('the spatial preview can orbit and zoom from its keyboard focus without trapping Tab', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('corner-preview').locator('canvas, .fallback')).toHaveCount(1);
+  const canvas = page.getByTestId('corner-preview').locator('canvas');
+  test.skip(!(await canvas.count()), 'The separate fallback test covers browsers without WebGL.');
+  await canvas.focus();
+  const before = await canvas.screenshot();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect((await canvas.screenshot()).equals(before)).toBe(false);
+  const rotated = await canvas.screenshot();
+  await page.keyboard.press('+');
+  expect((await canvas.screenshot()).equals(rotated)).toBe(false);
+  await page.keyboard.press('Tab');
+  await expect(canvas).not.toBeFocused();
+});
+
+test('backward keyboard navigation reaches the unkeyed support link after a name edit', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.locator('#project-name').focus();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('Backward keyboard edit');
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('.support-button')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#project-name')).toBeFocused();
+  // Native scope exits stay native instead of restoring a stale control.
+  await page.locator('.brand').focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('.brand')).not.toBeFocused();
+});
