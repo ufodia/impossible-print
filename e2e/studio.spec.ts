@@ -269,6 +269,30 @@ test('preview buttons reflow and retain visible focus in forced colors with redu
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+for (const viewport of [
+  { width: 640, height: 512 },
+  { width: 320, height: 256 },
+]) {
+  test(`Tab after editing keeps the next control fully visible at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const name = page.getByLabel('Project name', { exact: true });
+    for (let step = 0; step < 20; step++) {
+      await page.keyboard.press('Tab');
+      if (await name.evaluate((element) => document.activeElement === element)) break;
+    }
+    await expect(name).toBeFocused();
+    await page.keyboard.press('End');
+    await page.keyboard.type(' keyboard visibility');
+    await page.keyboard.press('Tab');
+    const next = page.getByRole('button', { name: /^Upload image/ });
+    await expect(next).toBeFocused();
+    await expect(next).toBeInViewport({ ratio: 1 });
+  });
+}
+
 test('backward keyboard navigation reaches the unkeyed support link after a name edit', async ({
   page,
 }) => {
