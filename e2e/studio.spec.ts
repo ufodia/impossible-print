@@ -177,6 +177,98 @@ test('the spatial preview can orbit and zoom from its keyboard focus without tra
   await expect(canvas).not.toBeFocused();
 });
 
+test('native preview buttons rotate and zoom with Enter while preserving focus and camera reset', async ({
+  page,
+}) => {
+  await readyStudio(page);
+  const canvas = page.getByTestId('corner-preview').locator('canvas');
+  await expect(page.getByTestId('corner-preview').locator('canvas, .fallback')).toHaveCount(1);
+  test.skip(!(await canvas.count()), 'The separate fallback test covers browsers without WebGL.');
+  const group = page.getByRole('group', { name: 'Rotate and zoom the 3D preview', exact: true });
+  const configured = await canvas.screenshot();
+  for (const name of [
+    'Rotate left',
+    'Rotate right',
+    'Rotate up',
+    'Rotate down',
+    'Zoom in',
+    'Zoom out',
+  ]) {
+    const button = group.getByRole('button', { name, exact: true });
+    await expect(button).toBeEnabled();
+    const before = await canvas.screenshot();
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await expect(button).toBeFocused();
+    await expect(page.getByRole('status')).toHaveText(`${name}. Orbit overview.`);
+    expect(await pixelDifference(page, before, await canvas.screenshot())).toBeGreaterThan(0.001);
+    await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+  const zoomIn = group.getByRole('button', { name: 'Zoom in', exact: true });
+  await zoomIn.focus();
+  const beforeSpace = await canvas.screenshot();
+  await page.keyboard.press('Space');
+  await expect(zoomIn).toBeFocused();
+  expect(await pixelDifference(page, beforeSpace, await canvas.screenshot())).toBeGreaterThan(
+    0.001,
+  );
+  await page.getByRole('button', { name: 'Camera view', exact: true }).press('Enter');
+  expect(await pixelDifference(page, configured, await canvas.screenshot())).toBeLessThan(0.02);
+  await group.getByRole('button', { name: 'Zoom out', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  await expect(canvas).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(canvas).not.toBeFocused();
+});
+
+test('preview buttons reflow and retain visible focus in forced colors with reduced motion', async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 320, height: 900 });
+  await readyStudio(page);
+  const group = page.getByRole('group', { name: 'Rotate and zoom the 3D preview', exact: true });
+  const buttons = group.getByRole('button');
+  await expect(buttons).toHaveCount(6);
+  const canvas = page.getByTestId('corner-preview').locator('canvas');
+  await expect(page.getByTestId('corner-preview').locator('canvas, .fallback')).toHaveCount(1);
+  test.skip(!(await canvas.count()), 'The separate fallback test covers browsers without WebGL.');
+  await expect(buttons.first()).toBeEnabled();
+  await buttons.first().focus();
+  const appearance = await buttons.first().evaluate((button) => {
+    const style = getComputedStyle(button),
+      rect = button.getBoundingClientRect();
+    return {
+      forcedColors: matchMedia('(forced-colors: active)').matches,
+      reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: parseFloat(style.outlineWidth),
+      outlineColor: style.outlineColor,
+      background: style.backgroundColor,
+      borderColor: style.borderTopColor,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
+  expect(appearance.forcedColors).toBe(true);
+  expect(appearance.reducedMotion).toBe(true);
+  expect(appearance.outlineStyle).toBe('solid');
+  expect(appearance.outlineWidth).toBeGreaterThanOrEqual(2);
+  expect(appearance.outlineColor).not.toBe(appearance.background);
+  expect(appearance.borderColor).not.toBe(appearance.background);
+  expect(appearance.width).toBeGreaterThanOrEqual(24);
+  expect(appearance.height).toBeGreaterThanOrEqual(24);
+  for (const button of await buttons.all()) {
+    const rect = (await button.boundingBox())!;
+    expect(rect.x).toBeGreaterThanOrEqual(0);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(320);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('backward keyboard navigation reaches the unkeyed support link after a name edit', async ({
   page,
 }) => {

@@ -88,7 +88,7 @@ npx playwright install --no-shell chromium
 npm run test:e2e
 ```
 
-`verify` runs strict TypeScript, unit tests and the production build. The browser suite exercises real changing raster outputs, WebGL camera/orbit rendering, project round trips, print geometry, malformed imports and the WebGL fallback. The [testing guide](docs/testing.md) explains the remaining physical checks.
+`verify` runs strict TypeScript, unit tests and the production build. The browser suite exercises real changing raster outputs, WebGL camera/orbit rendering, native rotate/zoom buttons with Enter and Space, focus retention, narrow-screen and forced-colors behavior, project round trips, print geometry, malformed imports and the WebGL fallback. These scripted keyboard checks do not establish screen-reader compatibility; the custom canvas keys still require a real assistive-technology test. The native buttons provide the same camera adjustments without requiring canvas key passthrough. The [testing guide](docs/testing.md) explains the remaining physical checks.
 
 ## Find your way around
 

@@ -3,6 +3,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Project, Projection } from './core';
 
 export type PreviewView = 'camera' | 'overview';
+export type PreviewAdjustment = 'left' | 'right' | 'up' | 'down' | 'in' | 'out';
+
+const keyboardAdjustments: Record<string, PreviewAdjustment> = {
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  '+': 'in',
+  '=': 'in',
+  '-': 'out',
+  _: 'out',
+};
 
 /** A disposable Z-up scene. Textures are the actual printable surface rasters. */
 export class CornerPreview {
@@ -28,19 +40,10 @@ export class CornerPreview {
 
   private readonly keyboardOrbit = (event: KeyboardEvent): void => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    const action = event.key;
-    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-', '_'].includes(action))
-      return;
+    const action = keyboardAdjustments[event.key];
+    if (!action) return;
     event.preventDefault();
-    this.manualOrbit();
-    if (action === 'ArrowLeft') this.controls.rotateLeft(0.08);
-    if (action === 'ArrowRight') this.controls.rotateLeft(-0.08);
-    if (action === 'ArrowUp') this.controls.rotateUp(0.08);
-    if (action === 'ArrowDown') this.controls.rotateUp(-0.08);
-    if (action === '+' || action === '=') this.controls.dollyIn(0.9);
-    if (action === '-' || action === '_') this.controls.dollyOut(0.9);
-    this.controls.update();
-    this.draw();
+    this.adjustView(action);
   };
 
   constructor(
@@ -60,7 +63,7 @@ export class CornerPreview {
     this.renderer.domElement.tabIndex = 0;
     this.renderer.domElement.setAttribute(
       'aria-label',
-      'Three-dimensional floor and wall projection preview. Arrow keys orbit; plus and minus zoom. Camera view restores the measured viewpoint.',
+      'Three-dimensional floor and wall projection preview. Use the rotate and zoom buttons, or arrow keys and plus or minus. Camera view restores the measured viewpoint.',
     );
     this.renderer.domElement.style.width = '100%';
     this.renderer.domElement.style.height = '100%';
@@ -169,6 +172,19 @@ export class CornerPreview {
     this.observer.observe(this.container);
     this.setView(view);
     this.resize();
+  }
+
+  adjustView(action: PreviewAdjustment): void {
+    if (this.disposed) return;
+    this.manualOrbit();
+    if (action === 'left') this.controls.rotateLeft(0.08);
+    if (action === 'right') this.controls.rotateLeft(-0.08);
+    if (action === 'up') this.controls.rotateUp(0.08);
+    if (action === 'down') this.controls.rotateUp(-0.08);
+    if (action === 'in') this.controls.dollyIn(0.9);
+    if (action === 'out') this.controls.dollyOut(0.9);
+    this.controls.update();
+    this.draw();
   }
 
   setView(view: PreviewView): void {

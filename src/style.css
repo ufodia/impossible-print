@@ -584,6 +584,29 @@ input:not([type='checkbox']):focus {
   font: 10px var(--mono);
   color: #a0b7a4;
 }
+.preview-adjustments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 13px;
+  background: #eef4ed;
+  border-bottom: 1px solid #d8e5d7;
+}
+.preview-adjustment {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #5b7265;
+  border-radius: 5px;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 12px;
+}
+.preview-adjustment:hover:not(:disabled) {
+  background: #dbeae0;
+}
+.preview-adjustment:focus-visible {
+  outline-color: #366a89;
+}
 .corner-preview {
   height: 470px;
   min-height: 360px;
@@ -1644,6 +1667,14 @@ input:not([type='checkbox']):focus {
 }
 
 @media (forced-colors: active) {
+  .preview-adjustment {
+    color: ButtonText;
+    background: ButtonFace;
+    border-color: ButtonText;
+  }
+  .preview-adjustment:focus-visible {
+    outline-color: Highlight;
+  }
   .view-button[aria-pressed='true'] {
     outline: 2px solid Highlight;
     outline-offset: -3px;

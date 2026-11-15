@@ -83,6 +83,14 @@ test('without WebGL the explicit fallback retains real surface PNG and print out
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Camera view', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toBeDisabled();
+    const adjustments = page
+      .getByRole('group', {
+        name: 'Rotate and zoom the 3D preview',
+        exact: true,
+      })
+      .getByRole('button');
+    await expect(adjustments).toHaveCount(6);
+    for (const button of await adjustments.all()) await expect(button).toBeDisabled();
     await expect(page.locator('.preview-label')).toHaveText('3D PREVIEW UNAVAILABLE');
     await expect(page.locator('.view-caption > span').first()).toHaveText(
       'The 2D surface previews remain available.',
@@ -97,6 +105,7 @@ test('without WebGL the explicit fallback retains real surface PNG and print out
       page.getByText('3D preview is unavailable in this browser.', { exact: true }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toBeDisabled();
+    for (const button of await adjustments.all()) await expect(button).toBeDisabled();
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: /^Download floor PNG/ }).click();
     const download = await pending;
