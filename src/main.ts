@@ -292,6 +292,16 @@ function render(): void {
       })
       .catch(() => {
         if (previewGeneration !== previewEpoch || !container.isConnected) return;
+        const panel = container.closest('.spatial-panel')!;
+        panel.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach((button) => {
+          button.disabled = true;
+          button.classList.remove('active');
+          button.setAttribute('aria-pressed', 'false');
+        });
+        panel.querySelector('.preview-label')!.textContent = '3D PREVIEW UNAVAILABLE';
+        panel.querySelector('.view-toolbar > span')!.textContent = '3D controls unavailable';
+        panel.querySelector('.view-caption > span:first-child')!.textContent =
+          'The 2D surface previews remain available.';
         container.innerHTML = `<div class="preview-empty fallback"><span class="fallback-symbol">${icon('image')}</span><strong>3D preview is unavailable in this browser.</strong><p>The two surface previews and actual-size print sheets still work. Enable WebGL in a compatible browser to inspect the spatial view.</p></div>`;
       });
   }

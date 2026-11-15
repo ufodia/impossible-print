@@ -80,13 +80,35 @@ test('without WebGL the explicit fallback retains real surface PNG and print out
     await expect(
       page.getByText('3D preview is unavailable in this browser.', { exact: true }),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Camera view', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toBeDisabled();
+    await expect(page.locator('.preview-label')).toHaveText('3D PREVIEW UNAVAILABLE');
+    await expect(page.locator('.view-caption > span').first()).toHaveText(
+      'The 2D surface previews remain available.',
+    );
     await expect(page.getByRole('button', { name: 'Print A4 sheets', exact: true })).toBeEnabled();
     await expect(page.getByTestId('floor-preview')).toBeVisible();
+    const oldFloor = await page.getByTestId('floor-preview').getAttribute('src');
+    await page.getByLabel('Lateral offset (+ left) in millimeters', { exact: true }).fill('80');
+    await page.getByLabel('Lateral offset (+ left) in millimeters', { exact: true }).press('Tab');
+    await expect(page.getByTestId('floor-preview')).not.toHaveAttribute('src', oldFloor!);
+    await expect(
+      page.getByText('3D preview is unavailable in this browser.', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Orbit overview', exact: true })).toBeDisabled();
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: /^Download floor PNG/ }).click();
     const download = await pending;
     const bytes = await readFile((await download.path())!);
     expect([...bytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    const floor = await page.getByTestId('floor-preview').getAttribute('src');
+    const wall = await page.getByTestId('wall-preview').getAttribute('src');
+    const printPending = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Print A4 sheets', exact: true }).click();
+    const popup = await printPending;
+    await expect(popup.locator('.sheet.tile').first()).toBeVisible();
+    await expect(popup.locator('#floor-texture')).toHaveAttribute('href', floor!);
+    await expect(popup.locator('#wall-texture')).toHaveAttribute('href', wall!);
   } finally {
     await context.close();
   }
