@@ -106,6 +106,6 @@ npm run test:e2e
 
 If the studio helps you make something worth showing, a coffee supports browser compatibility work, geometry regressions and clearer print instructions. Support is voluntary; the same open-source tool remains available to everyone.
 
-[Buy ufodia a coffee](https://buymeacoffee.com/ufodia) · [Contribute a reproducible improvement](CONTRIBUTING.md)
+[Buy ufodia a coffee](https://buymeacoffee.com/ufodia) · [Contribute a reproducible improvement](CONTRIBUTING.md) · [GitHub Sponsors](https://github.com/sponsors/ufodia)
 
 First-party code and artwork: **MIT © 2026 ufodia**. Three.js retains its own MIT notice; see [third-party notices](THIRD_PARTY_NOTICES.md).
